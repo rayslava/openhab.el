@@ -1,4 +1,4 @@
-;;; openhab-items-mode.el --- Items files highlighting -*- lexical-binding: t -*-
+;;; openhab-things-mode.el --- Things files highlighting -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014-2016 Free Software Foundation, Inc.
 
@@ -27,29 +27,26 @@
 
 ;;; Commentary:
 ;;
-;;  This package provide the major `openhab-items-mode' which supports editing
-;;  openhab *.items files
+;;  This package provide the major `openhab-things-mode' which supports editing
+;;  openhab *.things files
 
 ;;; Code:
 
-(require 'font-lock)
+(require 'openhab-items-mode)
 
-(defconst openhab-items-types
-  '("Color" "Contact" "DateTime" "Dimmer"
-    "Group" "Image" "Location" "Number"
-    "Player" "Rollershutter" "String" "Switch")
-  "Types usable in things description")
-
-(defconst openhab-items-keywords
+(defconst openhab-things-keywords
   (let* (
+	 (x-keywords '("Thing" "Bridge" "Type" "Channels"))
+	 (x-keywords-regexp (regexp-opt x-keywords 'words))
 	 (x-types-regexp (regexp-opt openhab-items-types 'words)))
     `(
+      (,x-keywords-regexp . font-lock-keyword-face)
       (,x-types-regexp . font-lock-type-face)
       ("\"\\.\\*\\?" . font-lock-string-face)
-      (,(concat (regexp-opt openhab-items-types 'nil) "[[:space:]]+?\\([[:alnum:]_]+\\)[[:space:]]+?") 1 font-lock-variable-name-face)
-      ("<\\(\\w*\\)>" . font-lock-constant-face))))
+      (,(concat (regexp-opt x-keywords 'nil) "[[:space:]]+?\\([[:alnum:]_:]+\\)[[:space:]]+?") 1 font-lock-constant-face)
+      (,(concat (regexp-opt openhab-items-types 'nil) "[[:space:]]*?:[[:space:]]*?\\([[:alnum:]_:]+\\)") 1 font-lock-variable-name-face))))
 
-(defvar openhab-items-mode-syntax-table
+(defvar openhab-things-mode-syntax-table
   (let ((st (make-syntax-table)))
     (modify-syntax-entry ?_ "w" st)
     (modify-syntax-entry ?< "(>" st)
@@ -57,16 +54,16 @@
     st)
   "Syntax table for `sample-mode'.")
 
-(defvar openhab-items-mode-hook nil)
+(defvar openhab-things-mode-hook nil)
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.items\\'" . openhab-items-mode))
+(add-to-list 'auto-mode-alist '("\\.things\\'" . openhab-things-mode))
 
 ; This can replace (defun wpdl-mode ()...
-(define-derived-mode openhab-items-mode fundamental-mode "OpenHAB Items"
-  "Major mode for editing OpenHAB Items files."
-  :syntax-table openhab-items-mode-syntax-table
-  (set (make-local-variable 'font-lock-defaults) '(openhab-items-keywords nil t)))
+(define-derived-mode openhab-things-mode fundamental-mode "OpenHAB Things"
+  "Major mode for editing OpenHAB Things files."
+  :syntax-table openhab-things-mode-syntax-table
+  (set (make-local-variable 'font-lock-defaults) '(openhab-things-keywords nil t)))
 
-(provide 'openhab-items-mode)
-;;; openhab-items-mode.el ends here
+(provide 'openhab-things-mode)
+;;; openhab-things-mode.el ends here
