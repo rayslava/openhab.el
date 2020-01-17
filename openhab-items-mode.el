@@ -1,7 +1,5 @@
 ;;; openhab-items-mode.el --- Items files highlighting -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2016 Free Software Foundation, Inc.
-
 ;; Copyright (C) 2020 Slava Barinov
 
 ;; Author: Slava Barinov (rayslava@gmail.com)
