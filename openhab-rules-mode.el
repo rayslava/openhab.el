@@ -30,23 +30,31 @@
 
 ;;; Code:
 
+(require 'smie)
 (require 'openhab-items-mode)
+
+(defconst openhab-rules-trigger-keywords
+  '("item" "member of" "time" "system" "thing" "channel"))
+
+(defconst openhab-rules-action-keywords
+  '("received" "update" "changed" "started" "from" "to" "triggered"))
 
 (defconst openhab-rules-keywords
   (let* (
 	 (x-var-def-keywords '("val" "var"))
-	 (x-trigger-keywords '("item" "member of" "time" "system" "thing" "channel"))
 	 (x-keywords '("true" "false" "rule" "when" "and" "or" "then" "end" "if"
-		       "null" "received" "update" "changed" "from" "to" "triggered"))
+		       "null"))
 	 (x-keywords-regexp
 	  (regexp-opt (append
-		       x-keywords x-var-def-keywords x-trigger-keywords) 'words))
+		       x-keywords x-var-def-keywords
+		       openhab-rules-trigger-keywords
+		       openhab-rules-action-keywords) 'words))
 	 (x-types-regexp (regexp-opt openhab-items-types 'words)))
     `(
       (,x-keywords-regexp . font-lock-keyword-face)
       (,x-types-regexp . font-lock-type-face)
       ("\"\\.\\*\\?" . font-lock-string-face)
-      (,(concat (regexp-opt x-trigger-keywords 'nil) "[[:space:]]+?\\([[:alnum:]_:]+\\)") 1 font-lock-constant-face)
+      (,(concat (regexp-opt openhab-rules-trigger-keywords 'nil) "[[:space:]]+?\\([[:alnum:]_:]+\\)") 1 font-lock-constant-face)
       (,(concat (regexp-opt x-var-def-keywords 'nil) "[[:space:]]+?\\([[:alnum:]_:]+\\)") 1 font-lock-variable-name-face))))
 
 (defvar openhab-rules-mode-syntax-table
@@ -61,6 +69,39 @@
 
 (defvar openhab-rules-mode-hook nil)
 
+(defconst openhab-rules-smie-grammar
+  (smie-prec2->grammar
+   (smie-bnf->prec2
+    '((id)
+      (rules (rule)
+	     (rule "\n" rule))
+      (rule ("rule" rulename "when" rulecond "then" insts "end"))
+
+      (rulename (id))
+      (rulecond (rulecond "or" rulecond)
+		(rulecond "and" rulecond)
+		(trigger " " action))
+      (trigger (openhab-rules-trigger-keywords))
+      (action (openhab-rules-action-keywords))
+      (insts (insts "\n" insts))
+      (exp (exp "+" exp)
+	   (exp "*" exp)
+	   ("(" exps ")")
+	   (id))
+      (exps (exps "," exps) (exp)))
+    '((assoc "\n")
+      (assoc ",")
+      (assoc ":")
+      (assoc "+=" "=")
+      (assoc "or")
+      (assoc "and")
+      (assoc "==" "!=" "<" "<=" ">" ">=")
+      (assoc "+" "-")
+      (assoc "*" "/" "%")
+      (assoc ".")
+      ))
+   ))
+
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.rules\\'" . openhab-rules-mode))
 
@@ -68,7 +109,9 @@
 (define-derived-mode openhab-rules-mode fundamental-mode "OpenHAB Rules"
   "Major mode for editing OpenHAB Rules files."
   :syntax-table openhab-rules-mode-syntax-table
-  (set (make-local-variable 'font-lock-defaults) '(openhab-rules-keywords nil t)))
+  (set (make-local-variable 'font-lock-defaults) '(openhab-rules-keywords nil t))
+  (set (make-local-variable 'comment-start) "//")
+  (smie-setup openhab-rules-smie-grammar #'ignore))
 
 (provide 'openhab-rules-mode)
 ;;; openhab-rules-mode.el ends here
